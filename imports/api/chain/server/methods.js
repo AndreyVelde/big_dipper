@@ -170,7 +170,7 @@ Meteor.methods({
                     params: genesis.app_state.staking.params
                 },
                 mint: genesis.app_state.mint,
-                distr: {
+                /*distr: {
                     communityTax: distr.community_tax,
                     baseProposerReward: distr.base_proposer_reward,
                     bonusProposerReward: distr.bonus_proposer_reward,
@@ -184,7 +184,7 @@ Meteor.methods({
                 },
                 slashing:{
                     params: genesis.app_state.slashing.params
-                },
+                },*/
                 supply: genesis.app_state.supply,
                 crisis: genesis.app_state.crisis
             }
