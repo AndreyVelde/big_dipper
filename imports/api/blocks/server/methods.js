@@ -352,7 +352,7 @@ Meteor.methods({
                                 validator.voting_power = parseInt(validator.voting_power);
                                 validator.proposer_priority = parseInt(validator.proposer_priority);
 
-                                let valExist = Validators.findOne({"pub_key.value":validator.pub_key.value});
+                                let valExist = Validators.findOne({address:validator.address});
                                 if (!valExist){
                                     console.log(`validator pub_key ${validator.address} ${validator.pub_key.value} not in db`);
                                     // let command = Meteor.settings.bin.gaiadebug+" pubkey "+validator.pub_key.value;
@@ -390,7 +390,7 @@ Meteor.methods({
                                     }
 
                                     // bulkValidators.insert(validator);
-                                    bulkValidators.find({consensus_pubkey: validator.consensus_pubkey}).upsert().updateOne({$set:validator});
+                                    bulkValidators.find({address:validator.address}).upsert().updateOne({$set:validator});
                                     // console.log("validator first appears: "+bulkValidators.length);
                                     bulkVPHistory.insert({
                                         address: validator.address,
@@ -451,7 +451,7 @@ Meteor.methods({
                                             }
                                         }
 
-                                        bulkValidators.find({consensus_pubkey: valExist.consensus_pubkey}).updateOne({$set:validator});
+                                        bulkValidators.find({address:validator.address}).updateOne({$set:validator});
                                         // console.log("validator exisits: "+bulkValidators.length);
                                         // validatorSet.splice(val, 1);
                                     }  else {
