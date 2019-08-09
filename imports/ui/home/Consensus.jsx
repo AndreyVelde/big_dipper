@@ -24,7 +24,7 @@ export default class Consensus extends Component{
                 let lastSync = moment(this.props.consensus.latestBlockTime);
                 let current = moment();
                 let diff = current.diff(lastSync);
-                if (diff > 60000){
+                if (diff > 300000){
                     this.setState({
                         chainStopped:true
                     })
