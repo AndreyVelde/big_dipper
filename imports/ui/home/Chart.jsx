@@ -89,7 +89,7 @@ export default class Chart extends Component{
                             }
                         },
                         {
-                            label: 'Block Interveral',
+                            label: 'Block Interval',
                             fill: false,
                             lineTension: 0,
                             yAxisID: 'Time',
@@ -113,7 +113,7 @@ export default class Chart extends Component{
                             }
                         },
                         {
-                            label: 'No. of Validators',
+                            label: 'Number of Validators',
                             fill: false,
                             lineTension: 0,
                             yAxisID: 'Validators',
