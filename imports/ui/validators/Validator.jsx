@@ -15,6 +15,7 @@ import { DelegationButtons } from '../ledger/LedgerActions.jsx';
 import { Helmet } from 'react-helmet';
 import LinkIcon from '../components/LinkIcon.jsx';
 import i18n from 'meteor/universe:i18n';
+import TimeStamp from '../components/TimeStamp.jsx';
 
 const T = i18n.createComponent();
 
@@ -87,7 +88,7 @@ export default class Validator extends Component{
     componentDidUpdate(prevProps, prevState){
         if (!this.isSameValidator(prevProps) || this.state.user !== prevState.user)
             this.getUserDelegations();
-        if (!this.isSameValidator(prevProps)){
+        if (this.props.validator != prevProps.validator){
             // if (this.props.validator.description.identity != prevProps.validator.description.identity){
             if ((this.props.validator.description) && (this.props.validator.description != prevProps.validator.description)){
                 // console.log(prevProps.validator.description);
@@ -222,11 +223,11 @@ export default class Validator extends Component{
                                 <Col sm={4} className="label"><T>validators.selfDelegationAddress</T></Col>
                                 <Col sm={8} className="value address" data-delegator-address={this.props.validator.delegator_address}><Link to={"/account/"+this.props.validator.delegator_address}>{this.props.validator.delegator_address}</Link></Col>
                                 <Col sm={4} className="label"><T>validators.commissionRate</T></Col>
-                                <Col sm={8} className="value">{this.props.validator.commission.CommissionRates?numbro(this.props.validator.commission.CommissionRates.rate*100).format('0.00')+"%":''} <small className="text-secondary">({this.state.updateTime})</small></Col>
+                                <Col sm={8} className="value">{this.props.validator.commission&&this.props.validator.commission.commission_rates?numbro(this.props.validator.commission.commission_rates.rate*100).format('0.00')+"%":''} <small className="text-secondary">({this.state.updateTime})</small></Col>
                                 <Col sm={4} className="label"><T>validators.maxRate</T></Col>
-                                <Col sm={8} className="value">{this.props.validator.commission.CommissionRates?numbro(this.props.validator.commission.CommissionRates.max_rate*100).format('0.00')+"%":''}</Col>
+                                <Col sm={8} className="value">{this.props.validator.commission&&this.props.validator.commission.commission_rates?numbro(this.props.validator.commission.commission_rates.max_rate*100).format('0.00')+"%":''}</Col>
                                 <Col sm={4} className="label"><T>validators.maxChangeRate</T></Col>
-                                <Col sm={8} className="value">{this.props.validator.commission.CommissionRates?numbro(this.props.validator.commission.CommissionRates.max_change_rate*100).format('0.00')+"%":''}</Col>
+                                <Col sm={8} className="value">{this.props.validator.commission&&this.props.validator.commission.commission_rates?numbro(this.props.validator.commission.commission_rates.max_change_rate*100).format('0.00')+"%":''}</Col>
                             </Row>
                           </CardBody>
                       </Card>
@@ -252,7 +253,7 @@ export default class Validator extends Component{
                                 <Row><Col md={4} className="label"><T>validators.unbondingHeight</T></Col>
                                             <Col md={8} className="value">{numbro(this.props.validator.unbonding_height).format('0,0')}</Col>
                                             <Col md={4} className="label"><T>validators.unbondingTime</T></Col>
-                                            <Col md={8} className="value">{moment.utc(this.props.validator.unbonding_time).format("D MMM YYYY, h:mm:ssa z")}</Col>
+                                            <Col md={8} className="value"><TimeStamp time={this.props.validator.unbonding_time}/></Col>
                                         </Row></Col>:''}
                                 </Row>
                           </CardBody>

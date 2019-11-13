@@ -12,7 +12,9 @@ import { Helmet } from 'react-helmet';
 import posed from 'react-pose';
 import i18n from 'meteor/universe:i18n';
 import { Meteor } from 'meteor/meteor';
-import Coin from '/both/utils/coins.js'
+import Coin from '/both/utils/coins.js';
+import TimeStamp from '../components/TimeStamp.jsx';
+import { ProposalActionButtons } from '../ledger/LedgerActions.jsx';
 
 const T = i18n.createComponent();
 
@@ -47,6 +49,13 @@ export default class Proposal extends Component{
         }
     }
 
+    static getDerivedStateFromProps(props, state) {
+        if (state.user !== localStorage.getItem(CURRENTUSERADDR)) {
+            return {user: localStorage.getItem(CURRENTUSERADDR)};
+        }
+        return null;
+    }
+
     componentDidUpdate(prevProps){
         if (this.props.proposal != prevProps.proposal){
             // console.log(this.props.proposal.value);
@@ -71,7 +80,7 @@ export default class Proposal extends Component{
 
                         this.setState({
                             tally: this.props.proposal.tally,
-                            tallyDate: moment.utc(this.props.proposal.updatedAt).format("D MMM YYYY, h:mm:ssa z"),
+                            tallyDate: <TimeStamp time={this.props.proposal.updatedAt}/>,
                             voteStarted: true,
                             voteEnded: false,
                             totalVotes: totalVotes,
@@ -123,28 +132,33 @@ export default class Proposal extends Component{
 
     populateChartData() {
         const optionOrder = {'Yes': 0, 'Abstain': 1, 'No': 2, 'NoWithVeto': 3};
-        let votes = this.props.proposal.votes.sort(
+        let votes = this.props.proposal.votes?this.props.proposal.votes.sort(
             (vote1, vote2) => vote2['votingPower'] - vote1['votingPower']
         ).sort(
-            (vote1, vote2) => optionOrder[vote1.option] - optionOrder[vote2.option]);
+            (vote1, vote2) => optionOrder[vote1.option] - optionOrder[vote2.option]):null;
         let maxVotingPower = {'N/A': 1};
         let totalVotingPower = {'N/A': 0};
         let votesByOptions = {'All': votes, 'Yes': [], 'Abstain': [], 'No': [], 'NoWithVeto': []};
 
         let emtpyData = [{'votingPower': 1, option: 'N/A'}];
-        votes.forEach((vote) => votesByOptions[vote.option].push(vote));
+
+        if (votes)
+            votes.forEach((vote) => votesByOptions[vote.option].push(vote));
 
         let datasets = [];
         for (let option in votesByOptions) {
             let data = votesByOptions[option];
-            maxVotingPower[option] = Math.max.apply(null, data.map((vote) => vote.votingPower));
-            totalVotingPower[option] = data.reduce((s, x) => x.votingPower + s, 0);
-            datasets.push({
-                datasetId: option,
-                data: data.length == 0?emtpyData:data,
-                totalVotingPower: totalVotingPower,
-                maxVotingPower: maxVotingPower
-            })};
+            if (data){
+                maxVotingPower[option] = Math.max.apply(null, data.map((vote) => vote.votingPower));
+                totalVotingPower[option] = data.reduce((s, x) => x.votingPower + s, 0);
+                datasets.push({
+                    datasetId: option,
+                    data: data.length == 0?emtpyData:data,
+                    totalVotingPower: totalVotingPower,
+                    maxVotingPower: maxVotingPower
+                })    
+            }
+        };
 
         let layout = [['piePlot']];
         let scales = [{
@@ -153,7 +167,7 @@ export default class Proposal extends Component{
             domain: ['Yes', 'Abstain', 'No', 'NoWithVeto', 'N/A'],
             range: ['#4CAF50', '#ff9800', '#e51c23', '#9C27B0', '#BDBDBD']
         }];
-        let isDataEmtpy = votesByOptions[this.state.breakDownSelection].length==0;
+        let isDataEmtpy = votesByOptions[this.state.breakDownSelection] && votesByOptions[this.state.breakDownSelection].length==0;
         let tooltip = (component, point, data, ds) => {
             let total = ds.metadata().totalVotingPower['All'];
             let optionTotal = ds.metadata().totalVotingPower[data.option];
@@ -266,7 +280,8 @@ export default class Proposal extends Component{
                     <div className="proposal bg-light">
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.proposalID</T></Col>
-                            <Col md={9} className="value">{this.props.proposal.proposalId}</Col>
+                            <Col md={this.state.user?6:9} className="value">{this.props.proposal.proposalId}</Col>
+                            {this.state.user?<Col md={3}><ProposalActionButtons history={this.props.history} proposalId={proposalId}/></Col>:null}
                         </Row>
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.proposer</T></Col>
@@ -384,19 +399,19 @@ export default class Proposal extends Component{
                         </Row>
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.submitTime</T></Col>
-                            <Col md={9} className="value">{moment.utc(this.state.proposal.submit_time).format("D MMM YYYY, h:mm:ssa z")}</Col>
+                            <Col md={9} className="value"><TimeStamp time={this.state.proposal.submit_time}/></Col>
                         </Row>
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.depositEndTime</T></Col>
-                            <Col md={9} className="value">{moment.utc(this.state.proposal.deposit_end_time).format("D MMM YYYY, h:mm:ssa z")}</Col>
+                            <Col md={9} className="value"><TimeStamp time={this.state.proposal.deposit_end_time}/></Col>
                         </Row>
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.votingStartTime</T></Col>
-                            <Col md={9} className="value">{(this.state.proposal.voting_start_time != '0001-01-01T00:00:00Z')?moment.utc(this.state.proposal.voting_start_time).format("D MMM YYYY, h:mm:ssa z"):'-'}</Col>
+                            <Col md={9} className="value">{(this.state.proposal.voting_start_time != '0001-01-01T00:00:00Z')?<TimeStamp time={this.stat}/>:'-'}</Col>
                         </Row>
                         <Row className="mb-2 border-top">
                             <Col md={3} className="label"><T>proposals.votingEndTime</T></Col>
-                            <Col md={9} className="value">{(this.state.proposal.voting_start_time != '0001-01-01T00:00:00Z')?moment.utc(this.state.proposal.voting_end_time).format("D MMM YYYY, h:mm:ssa z"):'-'}</Col>
+                            <Col md={9} className="value">{(this.state.proposal.voting_start_time != '0001-01-01T00:00:00Z')?<TimeStamp time={this.state.proposal.voting_end_time}/>:'-'}</Col>
                         </Row>
                     </div>
                     <Row className='clearfix'>
