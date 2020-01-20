@@ -2,7 +2,8 @@
 // https://github.com/cosmos/ledger-cosmos-js/blob/master/src/index.js
 import 'babel-polyfill';
 import Cosmos from "@lunie/cosmos-js"
-import { App, comm_u2f } from "ledger-cosmos-js"
+import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import CosmosApp from "ledger-cosmos-js"
 import { signatureImport } from "secp256k1"
 import semver from "semver"
 import bech32 from "bech32";
@@ -25,7 +26,7 @@ DerivationPath{44, 118, account, 0, index}
 */
 
 const HDPATH = [44, 118, 0, 0, 0]
-const BECH32PREFIX = `cosmos`
+const BECH32PREFIX = Meteor.settings.public.bech32PrefixAccAddr
 
 function bech32ify(address, prefix) {
     const words = bech32.toWords(address)
@@ -33,14 +34,14 @@ function bech32ify(address, prefix) {
 }
 
 export const toPubKey = (address) => {
-    return bech32.decode('cosmos', address);
+    return bech32.decode(Meteor.settings.public.bech32PrefixAccAddr, address);
 }
 
 function createCosmosAddress(publicKey) {
     const message = CryptoJS.enc.Hex.parse(publicKey.toString(`hex`))
     const hash = ripemd160(sha256(message)).toString()
     const address = Buffer.from(hash, `hex`)
-    const cosmosAddress = bech32ify(address, `cosmos`)
+    const cosmosAddress = bech32ify(address, Meteor.settings.public.bech32PrefixAccAddr)
     return cosmosAddress
 }
 
@@ -79,8 +80,8 @@ export class Ledger {
         // assume well connection if connected once
         if (this.cosmosApp) return
 
-        const communicationMethod = await comm_u2f.create_async(timeout, true)
-        const cosmosLedgerApp = new App(communicationMethod)
+        const transport = await TransportWebUSB.create(timeout)
+        const cosmosLedgerApp = new CosmosApp(transport)
 
         this.cosmosApp = cosmosLedgerApp
 
@@ -90,7 +91,7 @@ export class Ledger {
     async getCosmosAppVersion() {
         await this.connect()
 
-        const response = await this.cosmosApp.get_version()
+        const response = await this.cosmosApp.getVersion()
         this.checkLedgerErrors(response)
         const { major, minor, patch, test_mode } = response
         checkAppMode(this.testModeAllowed, test_mode)
@@ -132,8 +133,8 @@ export class Ledger {
         }
 
         const response = await this.cosmosApp.getAddressAndPubKey(
+            HDPATH,
             BECH32PREFIX,
-            HDPATH
         )
         this.checkLedgerErrors(response, {
             rejectionMessage: "Displayed address was rejected"
@@ -165,6 +166,11 @@ export class Ledger {
         case `U2F: Timeout`:
             throw new Error(timeoutMessag)
         case `Cosmos app does not seem to be open`:
+            // hack:
+            // It seems that when switching app in Ledger, WebUSB will disconnect, disabling further action.
+            // So we clean up here, and re-initialize this.cosmosApp next time when calling `connect`
+            this.cosmosApp.transport.close()
+            this.cosmosApp = undefined
             throw new Error(`Cosmos app is not open`)
         case `Command not allowed`:
             throw new Error(`Transaction rejected`)
