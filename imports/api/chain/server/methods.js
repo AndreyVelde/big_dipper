@@ -98,7 +98,7 @@ Meteor.methods({
                 catch(e){
                     console.log(e);
                 }
-
+/*
                 url = LCD + '/distribution/community_pool';
                 try {
                     response = HTTP.get(url);
